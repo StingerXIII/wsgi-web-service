@@ -7,7 +7,7 @@ def application(env, start_response):
 
 
 
-def process_request(request_method, request_body)
+def process_request(request_method, request_body):
     response_body = []
     if request_method == 'GET':
         response_body.append('received GET request')
