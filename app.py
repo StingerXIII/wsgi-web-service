@@ -1,5 +1,7 @@
 from app_config import db_parms
 import psycopg2
+import simplejson
+import datetime
 
 
 # db_parms syntax:
@@ -29,8 +31,8 @@ def application(env, start_response):
 
 
 def get_last_record():
-    message = ""
-    query = """select rec_text from records
+    message = []
+    query = """select rec_date, rec_time, rec_text from records
     where rec_date = (select max(rec_date) from records)
     and rec_time = (select max(rec_time) from records)"""
     conn = psycopg2.connect("dbname="+db_parms.get('db_name')+
@@ -41,8 +43,12 @@ def get_last_record():
     cur.execute(query)
     result = cur.fetchall()
     for row in result:
-        message = message + row[0]
-    return message
+        record = {
+            'res_date': row[0].strftime("%Y-%m-%d"),
+            'res_time': row[1].strftime("%H:%M:%S"),
+            'res_text': row[2]
+        }
+        message.append(record)
 
+    return simplejson.dumps(message)
 
-    return
