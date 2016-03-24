@@ -2,6 +2,7 @@ from app_config import db_parms
 import psycopg2
 import simplejson
 import datetime
+from string import Template
 
 
 # db_parms syntax:
@@ -25,6 +26,8 @@ def application(env, start_response):
             response_body += get_last_record()
     elif request_method == 'POST':
         response_body = 'received POST request\n' + 'request body is:\n' + request_body
+        if env['PATH_INFO'] == '/import':
+            response_body += save_record(request_body)
     else:
         response_body = 'request method is not implemented\n'
     return response_body
@@ -52,3 +55,22 @@ def get_last_record():
 
     return simplejson.dumps(message)
 
+
+def save_record(text):
+    query_template = Template("insert into records (rec_date, rec_time, rec_text) values ('$date','$time','$text')")
+    query = query_template.substitute(date=datetime.datetime.now().strftime("%Y-%m-%d"),
+                                      time=datetime.datetime.now().strftime("%H:%M:%S"),
+                                      text=process_input(text))
+    conn = psycopg2.connect("dbname="+db_parms.get('db_name')+
+                            " user="+db_parms.get('login')+
+                            " host="+db_parms.get('host')+
+                            " password="+db_parms.get('password'))
+    conn.autocommit = True
+    cur=conn.cursor()
+    cur.execute(query)
+    return '\nrecord imported'
+
+
+def process_input(text_value):
+    result_value = text_value
+    return result_value
