@@ -20,12 +20,11 @@ def application(env, start_response):
     start_response(status, response_headers)
     request_method = env['REQUEST_METHOD']
     request_body = env['wsgi.input'].read()
+    response_body = ""
     if request_method == 'GET':
-        response_body = 'received GET request\n'
         if env['PATH_INFO'] == '/last':
             response_body += get_last_record()
     elif request_method == 'POST':
-        response_body = 'received POST request\n' + 'request body is:\n' + request_body
         if env['PATH_INFO'] == '/import':
             response_body += save_record(request_body)
     else:
@@ -56,11 +55,13 @@ def get_last_record():
     return simplejson.dumps(message)
 
 
-def save_record(text):
+def save_record(json_input):
     query_template = Template("insert into records (rec_date, rec_time, rec_text) values ('$date','$time','$text')")
+
     query = query_template.substitute(date=datetime.datetime.now().strftime("%Y-%m-%d"),
                                       time=datetime.datetime.now().strftime("%H:%M:%S"),
-                                      text=process_input(text))
+                                      text=process_input(json_input))
+
     conn = psycopg2.connect("dbname="+db_parms.get('db_name')+
                             " user="+db_parms.get('login')+
                             " host="+db_parms.get('host')+
@@ -68,9 +69,9 @@ def save_record(text):
     conn.autocommit = True
     cur=conn.cursor()
     cur.execute(query)
-    return '\nrecord imported'
+    return 'OK\n'
 
 
-def process_input(text_value):
-    result_value = text_value
+def process_input(json_value):
+    result_value = json_value
     return result_value
